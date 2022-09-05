@@ -16,8 +16,6 @@ class PlayerCard():
     suit = None
     card = None
     val = 0
-    sum = 0 
-    cards_dealt = 0
 
 
 class DealerCard():
@@ -25,8 +23,6 @@ class DealerCard():
     suit = None
     card = None
     val = 0
-    sum = 0
-    cards_dealt = 0
     hidden = False
 
 
@@ -371,7 +367,6 @@ def print_card(Card):
 def get_card(Card, deck):
     # update the card class' suit and card attributes once picked from the deck
     card = random.choice(deck)
-    setattr(Card, "cards_dealt", Card.cards_dealt + 1)
     setattr(Card, "suit", card[1])
     setattr(Card, "card", card[0])
     return Card
