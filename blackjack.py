@@ -11,18 +11,20 @@ import sys
 import time
 
 
+p_vals = []
+d_vals = []
+
+
 class PlayerCard():
     side = "Player"
     suit = None
     card = None
     val = 0
+    num_aces = 0
 
 
-class DealerCard():
+class DealerCard(PlayerCard):
     side = "Dealer"
-    suit = None
-    card = None
-    val = 0
     hidden = False
 
 
@@ -49,7 +51,7 @@ def main():
     clear()
     
     pcards = []
-    p_vals = []
+    global p_vals
     p_ace = False
     p_10 = False
 
@@ -101,7 +103,7 @@ def main():
     print("Dealer's starting cards: ")
 
     dcards = []
-    d_vals = []
+    global d_vals
     d_ace = False
     d_10 = False
     for x in range(2):
@@ -182,7 +184,7 @@ def main():
             p_vals.append(PlayerCard.val)
             # if sum of player's hand is over 21, store that they've gone bust
             if sum(p_vals) > 21:
-                state = state._replace(bust=True)
+                state = calculate_if_bust(PlayerCard, state)
             print("Player's cards: ")
             time.sleep(0.5)  
             print(format_cards(pcards))
@@ -229,13 +231,15 @@ def main():
             print(format_cards(dcards))
             time.sleep(0.5)   
         elif sum(d_vals) > 21:
-            print("Player's hand: ")
-            time.sleep(0.5)  
-            print(format_cards(pcards))
-            time.sleep(0.5)  
-            print(f"Player wins with {sum(p_vals)}! Dealer has gone bust!\n")
-            time.sleep(5)
-            quit()
+            state = calculate_if_bust(DealerCard, state)
+            if state.bust:
+                print("Player's hand: ")
+                time.sleep(0.5)  
+                print(format_cards(pcards))
+                time.sleep(0.5)  
+                print(f"Player wins with {sum(p_vals)}! Dealer has gone bust!\n")
+                time.sleep(5)
+                quit()
         else:
             break
 
@@ -250,7 +254,7 @@ def main():
     print("Dealer's final cards: \n")
     time.sleep(0.5)  
     print(format_cards(dcards))
-    time.sleep(0.5)  
+    time.sleep(0.5)
 
     # declare winner based on closest hand to 21
     if sum(p_vals) < sum(d_vals):
@@ -267,6 +271,25 @@ def main():
         quit()
 
 
+def calculate_if_bust(Card, state):
+    global p_vals, d_vals
+
+    if Card.side == "Player": 
+        vals = p_vals
+    elif Card.side == "Dealer": 
+        vals = d_vals
+    
+    while sum(vals) > 21:
+        if Card.num_aces > 0:
+            ace_index = vals.index(11)
+            vals[ace_index] = 1
+            Card.num_aces = Card.num_aces - 1
+        else:
+            return state._replace(bust=True)
+    
+    return state
+
+
 def is_ace(Card):
     return Card.card == "A"
 
@@ -275,7 +298,7 @@ def is_10(Card):
     return Card.card in ["10", "J", "Q", "K"]
 
 
-def is_blackjack(State, ace, _10):
+def is_blackjack(State, ace, _10) -> State:
     if all([ace, _10]):
         return State._replace(blackjack=True)
 
@@ -294,7 +317,7 @@ def format_cards(cards):
     return output
 
 
-def player_turn(State):
+def player_turn(State) -> State:
     # ask for the player's input, checking for any errors
     move = input("What is your move? [h to hit] [s to stick] [q to quit] ")
     if move not in ["h", "s", "q"]:
@@ -384,6 +407,8 @@ def get_card_val(Card, sum):
     # if the card is an ace, it is equal to 11 unless the sum of the hand is equal to 11 or more
     if card == "A":
         val = 11 if sum < 11 else 1
+        if val == 11:
+            Card.num_aces += 1
         setattr(Card, "val", val)
     return Card
 
